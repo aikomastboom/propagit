@@ -182,7 +182,7 @@ Propagit.prototype.createService = function (remote, conn) {
         
         drones.forEach(function (drone) {
             self.emit('deploy', drone.id, opts);
-            drone.fetch(opts.repo, function (err) {
+            drone.fetch(opts.repo, opts.branch, function (err) {
                 pending --;
                 
                 if (err) {
@@ -289,38 +289,45 @@ Propagit.prototype.drone = function (fn) {
     
     self.processes = {};
     
-    function refs (repo) {
+    function refs (repo, branch) {
+		var refspec = '';
+		if (branch) {
+			refspec = '+' + branch + ':' + branch;
+		}
         return {
             origin : (self.gitUri + '/' + repo)
                 .replace(/(\.git)*$/, '.git')
             ,
+			refspec : refspec
         }
     }
     self.on('error', self.emit.bind(self, 'error'));
     
     var actions = {};
     
-    actions.fetch = function (repo, cb) {
-        var p = refs(repo);
+    actions.fetch = function (repo, branch, cb) {
+        var p = refs(repo, branch);
         runCmd([ 'git', 'init', self.repodir ], function (err) {
             if (err) return cb(err);
-            runCmd([ 'git', 'fetch', p.origin ], { cwd : self.repodir }, cb);
+            runCmd([ 'git', 'fetch', p.origin, p.refspec ], { cwd : self.repodir }, cb);
         });
     };
     
     actions.deploy = function (opts, cb) {
         var repo = opts.repo;
+		var branch = opts.branch;
         var commit = opts.commit;
         
         var dir = path.join(self.deploydir, repo + '.' + commit);
         exists(dir, function (ex) {
             if (ex) return cb(null, false); // already deployed this commit
             
-            var p = refs(repo);
+            var p = refs(repo, branch);
             
             process.env.COMMIT = commit;
             process.env.REPO = repo;
-            
+            process.env.BRANCH = branch;
+
             runCmd([ 'git', 'clone', self.repodir, dir ], function (err) {
                 if (err) return cb(err);
                 
@@ -380,9 +387,11 @@ Propagit.prototype.drone = function (fn) {
     
     actions.spawn = function (opts, cb) {
         var repo = opts.repo;
-        var commit = opts.commit;
+		var branch = opts.branch;
+		var commit = opts.commit;
         
         process.env.COMMIT = commit;
+		process.env.BRANCH = branch;
         process.env.REPO = repo;
         
         var id = Math.floor(Math.random() * (1<<24)).toString(16);
@@ -404,6 +413,7 @@ Propagit.prototype.drone = function (fn) {
                 status : 'running',
                 repo : repo,
                 commit : commit,
+				branch : branch,
                 command : opts.command,
                 cwd : dir,
                 process : ps,
@@ -416,6 +426,7 @@ Propagit.prototype.drone = function (fn) {
                     drone : actions.id,
                     id : id,
                     repo : repo,
+					branch : branch,
                     commit : commit,
                 });
             });
@@ -425,7 +436,8 @@ Propagit.prototype.drone = function (fn) {
                     drone : actions.id,
                     id : id,
                     repo : repo,
-                    commit : commit,
+					branch : branch,
+					commit : commit,
                 });
             });
             
@@ -434,7 +446,8 @@ Propagit.prototype.drone = function (fn) {
                     drone : actions.id,
                     id : id,
                     repo : repo,
-                    commit : commit,
+					branch : branch,
+					commit : commit,
                     command : opts.command,
                 });
                 
@@ -453,7 +466,8 @@ Propagit.prototype.drone = function (fn) {
                 drone : actions.id,
                 id : id,
                 repo : repo,
-                commit : commit,
+				branch : branch,
+				commit : commit,
                 command : opts.command,
                 cwd : dir,
             });
