@@ -290,15 +290,15 @@ Propagit.prototype.drone = function (fn) {
     self.processes = {};
     
     function refs (repo, branch) {
-		var refspec = '';
-		if (branch && branch != 'master') {
-			refspec = '+' + branch + ':' + branch;
-		}
+        var refspec = '';
+        if (branch && branch != 'master') {
+            refspec = '+' + branch + ':' + branch;
+        }
         return {
             origin : (self.gitUri + '/' + repo)
                 .replace(/(\.git)*$/, '.git')
             ,
-			refspec : refspec
+            refspec : refspec
         }
     }
     self.on('error', self.emit.bind(self, 'error'));
@@ -306,10 +306,10 @@ Propagit.prototype.drone = function (fn) {
     var actions = {};
     
     actions.fetch = function (repo, branch, cb) {
-		if (typeof branch == 'function') {
-			cb = branch;
-			branch = ''
-		}
+        if (typeof branch == 'function') {
+            cb = branch;
+            branch = ''
+        }
         var p = refs(repo, branch);
         runCmd([ 'git', 'init', self.repodir ], function (err) {
             if (err) return cb(err);
@@ -319,7 +319,7 @@ Propagit.prototype.drone = function (fn) {
     
     actions.deploy = function (opts, cb) {
         var repo = opts.repo;
-		var branch = opts.branch;
+        var branch = opts.branch;
         var commit = opts.commit;
         
         var dir = path.join(self.deploydir, repo + '.' + commit);
@@ -391,11 +391,11 @@ Propagit.prototype.drone = function (fn) {
     
     actions.spawn = function (opts, cb) {
         var repo = opts.repo;
-		var branch = opts.branch;
-		var commit = opts.commit;
+        var branch = opts.branch;
+        var commit = opts.commit;
         
         process.env.COMMIT = commit;
-		process.env.BRANCH = branch;
+        process.env.BRANCH = branch;
         process.env.REPO = repo;
         
         var id = Math.floor(Math.random() * (1<<24)).toString(16);
@@ -417,7 +417,7 @@ Propagit.prototype.drone = function (fn) {
                 status : 'running',
                 repo : repo,
                 commit : commit,
-				branch : branch,
+                branch : branch,
                 command : opts.command,
                 cwd : dir,
                 process : ps,
@@ -430,7 +430,7 @@ Propagit.prototype.drone = function (fn) {
                     drone : actions.id,
                     id : id,
                     repo : repo,
-					branch : branch,
+                    branch : branch,
                     commit : commit,
                 });
             });
@@ -440,8 +440,8 @@ Propagit.prototype.drone = function (fn) {
                     drone : actions.id,
                     id : id,
                     repo : repo,
-					branch : branch,
-					commit : commit,
+                    branch : branch,
+                    commit : commit,
                 });
             });
             
@@ -450,8 +450,8 @@ Propagit.prototype.drone = function (fn) {
                     drone : actions.id,
                     id : id,
                     repo : repo,
-					branch : branch,
-					commit : commit,
+                    branch : branch,
+                    commit : commit,
                     command : opts.command,
                 });
                 
@@ -470,8 +470,8 @@ Propagit.prototype.drone = function (fn) {
                 drone : actions.id,
                 id : id,
                 repo : repo,
-				branch : branch,
-				commit : commit,
+                branch : branch,
+                commit : commit,
                 command : opts.command,
                 cwd : dir,
             });
