@@ -291,7 +291,7 @@ Propagit.prototype.drone = function (fn) {
     
     function refs (repo, branch) {
 		var refspec = '';
-		if (branch) {
+		if (branch && branch != 'master') {
 			refspec = '+' + branch + ':' + branch;
 		}
         return {
@@ -306,6 +306,10 @@ Propagit.prototype.drone = function (fn) {
     var actions = {};
     
     actions.fetch = function (repo, branch, cb) {
+		if (typeof branch == 'function') {
+			cb = branch;
+			branch = ''
+		}
         var p = refs(repo, branch);
         runCmd([ 'git', 'init', self.repodir ], function (err) {
             if (err) return cb(err);
