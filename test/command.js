@@ -81,6 +81,8 @@ test('command line deploy', function (t) {
 		var opts = { cwd: dirs.repo };
 		var commands = [
 			'git init',
+			'git config user.email "you@example.com"',
+			'git config user.name "Your Name"',
 			'git add server.js',
 			'git commit -m"web server"',
 			'git log|head -n1',
