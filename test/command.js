@@ -48,13 +48,19 @@ test('command line deploy', function (t) {
 
 	ps.hub.on('error', function (err) {
 		debug && console.log('hub error', err);
+		t.fail(err);
 	});
 	ps.drone = spawn(
 		cmd, [ 'drone', '--hub=localhost:' + port, '--secret=beepboop' ],
 		{ cwd: dirs.drone }
 	);
-	ps.drone.stdout.on('data', function (data) {
-		debug && console.log('drone stdout: ' + data);
+	ps.drone.stdout.once('data', function (data) {
+		debug && console.log('drone stdout: "' + data+'"');
+		if (data == 'connected to the hub\n') {
+			start();
+		} else {
+			t.fail(data);
+		}
 	});
 
 	ps.drone.stderr.on('data', function (data) {
@@ -67,9 +73,11 @@ test('command line deploy', function (t) {
 
 	ps.drone.on('error', function (err) {
 		debug && console.log('drone error', err);
+		t.fail(err);
+
 	});
 
-	setTimeout(function () {
+	function start() {
 		var opts = { cwd: dirs.repo };
 		var commands = [
 			'git init',
@@ -102,7 +110,7 @@ test('command line deploy', function (t) {
 				cmd(s);
 			}
 		})();
-	}, 2000);
+	}
 
 	function deploy(commit, err, stdout, stderr) {
 		debug && console.log('deploy', commit, err, stdout, stderr);
@@ -123,6 +131,7 @@ test('command line deploy', function (t) {
 			'webapp', commit,
 			'node', 'server.js', httpPort
 		]);
+		// lets give travis some time to spin up the smallest of servers.
 		setTimeout(testServer, 2000);
 	}
 
