@@ -368,15 +368,22 @@ Propagit.prototype.drone = function (fn) {
 
             var p = refs(repo, branch);
 
-            process.env.COMMIT = commit;
-            process.env.REPO = repo;
-            process.env.BRANCH = branch;
+			var env = {};
 
-            runCmd([ 'git', 'clone', self.repodir, dir ], function (err) {
+			// copy current process env as a baseline
+			Object.keys(process.env || {}).forEach(function (key) {
+				env[key] = process.env[key];
+			});
+
+			env.COMMIT = commit;
+			env.BRANCH = branch;
+			env.REPO = repo;
+
+            runCmd([ 'git', 'clone', self.repodir, dir ], { env: env }, function handle_clone (err) {
                 if (err) return cb(err);
 
-                runCmd([ 'git', 'checkout', commit ], { cwd: dir },
-                    function (err) {
+                return runCmd([ 'git', 'checkout', commit ], { cwd: dir, env: env },
+                    function handle_checkout (err) {
                         if (err) return cb(err);
                         self.emit('deploy', {
                             drone: actions.id,
@@ -384,7 +391,7 @@ Propagit.prototype.drone = function (fn) {
                             repo: repo,
                             cwd: dir
                         });
-                        cb(null, true)
+                        return cb(null, true)
                     });
             });
         });
@@ -435,16 +442,22 @@ Propagit.prototype.drone = function (fn) {
         var repo = opts.repo;
         var branch = opts.branch;
         var commit = opts.commit;
+		var env = {};
 
-        process.env.COMMIT = commit;
-        process.env.BRANCH = branch;
-        process.env.REPO = repo;
+		// copy current process env as a baseline
+		Object.keys(process.env || {}).forEach(function (key) {
+			env[key] = process.env[key];
+		});
+
+        env.COMMIT = commit;
+        env.BRANCH = branch;
+        env.REPO = repo;
 
         var id = Math.floor(Math.random() * (1 << 24)).toString(16);
-        process.env.PROCESS_ID = id;
+        env.PROCESS_ID = id;
 
         Object.keys(opts.env || {}).forEach(function (key) {
-            process.env[key] = opts.env[key];
+            env[key] = opts.env[key];
         });
 
         var dir = opts.cwd || path.join(self.deploydir, repo + '.' + commit);
@@ -454,7 +467,7 @@ Propagit.prototype.drone = function (fn) {
 
         var processes = self.processes;
         (function respawn() {
-            var ps = spawn(cmd, args, { cwd: dir });
+            var ps = spawn(cmd, args, { cwd: dir, env: env });
             ps.once('error', function (err) {
                 self.emit('exit', null, null, {
                     drone: opts.id,
